@@ -38,6 +38,8 @@ async function fetchOrders() {
                     <td>${data.name}</td>
                     <td>${data.phone}</td>
                     <td>${data.province || data.address}</td>
+                    <td>${data.pipes || 0}</td>
+                    <td>${data.orderdate ? new Date(data.orderdate?.toDate()).toLocaleDateString('ar-EG') : 'بدون تاريخ'}</td>
                     <td>
                         <select class="status-select" data-id="${docItem.id}">
                             <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
@@ -132,12 +134,14 @@ async function editOrderDetails(orderId) {
             const newName = prompt("الاسم الحالي: " + data.name + "\n\nأدخل الاسم الجديد:", data.name);
             const newPhone = prompt("الهاتف الحالي: " + data.phone + "\n\nأدخل الهاتف الجديد:", data.phone);
             const newProvince = prompt("المحافظة الحالية: " + (data.province || data.address) + "\n\nأدخل المحافظة الجديدة:", data.province || data.address);
+            const newPipes = prompt("العدد الحالي: " + (data.pipes || 0) + "\n\nأدخل العدد الجديد:", data.pipes || 1);
             
-            if (newName !== null && newPhone !== null && newProvince !== null) {
+            if (newName !== null && newPhone !== null && newProvince !== null && newPipes !== null) {
                 await updateDoc(docRef, {
                     name: newName || data.name,
                     phone: newPhone || data.phone,
-                    province: newProvince || data.province
+                    province: newProvince || data.province,
+                    pipes: parseInt(newPipes) || data.pipes
                 });
                 await fetchOrders();
                 alert("تم التحديث بنجاح!");
