@@ -37,7 +37,7 @@ async function fetchOrders() {
                 <tr>
                     <td>${data.name}</td>
                     <td>${data.phone}</td>
-                    <td>${data.address}</td>
+                    <td>${data.province || data.address}</td>
                     <td>
                         <select class="status-select" data-id="${docItem.id}">
                             <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
@@ -131,13 +131,13 @@ async function editOrderDetails(orderId) {
             const data = docSnap.data();
             const newName = prompt("الاسم الحالي: " + data.name + "\n\nأدخل الاسم الجديد:", data.name);
             const newPhone = prompt("الهاتف الحالي: " + data.phone + "\n\nأدخل الهاتف الجديد:", data.phone);
-            const newAddress = prompt("العنوان الحالي: " + data.address + "\n\nأدخل العنوان الجديد:", data.address);
+            const newProvince = prompt("المحافظة الحالية: " + (data.province || data.address) + "\n\nأدخل المحافظة الجديدة:", data.province || data.address);
             
-            if (newName !== null && newPhone !== null && newAddress !== null) {
+            if (newName !== null && newPhone !== null && newProvince !== null) {
                 await updateDoc(docRef, {
                     name: newName || data.name,
                     phone: newPhone || data.phone,
-                    address: newAddress || data.address
+                    province: newProvince || data.province
                 });
                 await fetchOrders();
                 alert("تم التحديث بنجاح!");
