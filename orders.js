@@ -1,5 +1,18 @@
 import { db, collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from "./firebase-config.js";
 
+// دالة مساعدة لتنسيق التاريخ
+function formatFirebaseDate(timestamp) {
+    if (!timestamp?.toDate) return 'تاريخ غير صالح';
+    const date = timestamp.toDate();
+    return date.toLocaleDateString('ar-EG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // البحث عن الطلبات
 function searchOrders() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -39,7 +52,7 @@ async function fetchOrders() {
                     <td>${data.phone}</td>
                     <td>${data.province || data.address}</td>
                     <td>${data.pipes || 0}</td>
-                    <td>${data.orderdate ? data.orderdate.toDate().toString() : 'بدون تاريخ'}</td>
+                    <td>${data.orderDate ? formatFirebaseDate(data.orderDate) : 'بدون تاريخ'}</td>
                     <td>
                         <select class="status-select" data-id="${docItem.id}">
                             <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
