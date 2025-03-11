@@ -1,5 +1,6 @@
 import { db, collection, addDoc, serverTimestamp } from "./firebase-config.js";
 
+// إدارة الوضع الداكن
 document.getElementById("darkModeToggle").addEventListener("click", () => {
     document.body.classList.toggle("dark-mode");
     localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
@@ -11,10 +12,12 @@ window.addEventListener('load', () => {
     }
 });
 
+// تهيئة الخريطة
 const platform = new H.service.Platform({
     apikey: "7kAhoWptjUW7A_sSWh3K2qaZ6Lzi4q3xaDRYwFWnCbE"
 });
 
+// عرض الخريطة
 window.showOrderMap = (lat, lng) => {
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -66,10 +69,32 @@ window.showOrderMap = (lat, lng) => {
     new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
 };
 
+// فتح خرائط Google
 window.openGoogleMaps = (lat, lng) => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
 };
 
+// فتح Waze
 window.openWaze = (lat, lng) => {
     window.open(`https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
 };
+
+// دالة إضافة طلب (اختيارية)
+async function addOrder() {
+    try {
+        await addDoc(collection(db, "orders"), {
+            name: "مثال",
+            phone: "07701234567",
+            province: "بغداد",
+            pipes: 2,
+            orderDate: serverTimestamp(),
+            status: "قيد الانتظار",
+            latitude: 33.3152,
+            longitude: 44.3661
+        });
+        alert("تم إضافة الطلب!");
+    } catch (error) {
+        console.error("خطأ في الإضافة:", error);
+        alert("فشل في الإضافة!");
+    }
+}
