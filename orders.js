@@ -1,8 +1,7 @@
 import { db, collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from "./firebase-config.js";
 
-// دالة مساعدة لتنسيق التاريخ
-function formatFirebaseDate(timestamp) {
-    if (!timestamp?.toDate) return 'تاريخ غير صالح';
+const formatDate = (timestamp) => {
+    if (!timestamp?.toDate) return 'بدون تاريخ';
     const date = timestamp.toDate();
     return date.toLocaleDateString('ar-EG', {
         year: 'numeric',
@@ -11,9 +10,8 @@ function formatFirebaseDate(timestamp) {
         hour: '2-digit',
         minute: '2-digit'
     });
-}
+};
 
-// البحث عن الطلبات
 function searchOrders() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('#ordersTable tr');
@@ -29,7 +27,6 @@ document.getElementById('searchInput').addEventListener('input', () => {
     searchTimeout = setTimeout(searchOrders, 300);
 });
 
-// جلب وتحديث الطلبات
 async function fetchOrders() {
     const tableBody = document.getElementById("ordersTable");
     tableBody.innerHTML = "";
@@ -52,7 +49,7 @@ async function fetchOrders() {
                     <td>${data.phone}</td>
                     <td>${data.province || data.address}</td>
                     <td>${data.pipes || 0}</td>
-                    <td>${data.orderDate ? formatFirebaseDate(data.orderDate) : 'بدون تاريخ'}</td>
+                    <td>${formatDate(data.orderDate)}</td>
                     <td>
                         <select class="status-select" data-id="${docItem.id}">
                             <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
@@ -82,13 +79,11 @@ async function fetchOrders() {
             tableBody.innerHTML += row;
         });
 
-        // تحديث العدادات
         document.getElementById('totalOrders').textContent = totalOrders;
         document.getElementById('pendingOrders').textContent = pending;
         document.getElementById('deliveredOrders').textContent = delivered;
         document.getElementById('canceledOrders').textContent = canceled;
 
-        // إضافة الأحداث
         document.querySelectorAll('.status-select').forEach(select => {
             select.addEventListener('change', async () => {
                 await updateOrderStatus(select.dataset.id, select.value);
@@ -114,7 +109,6 @@ async function fetchOrders() {
     }
 }
 
-// حذف الطلب
 async function deleteOrder(orderId) {
     try {
         await deleteDoc(doc(db, "orders", orderId));
@@ -126,7 +120,6 @@ async function deleteOrder(orderId) {
     }
 }
 
-// تحديث حالة الطلب
 async function updateOrderStatus(orderId, newStatus) {
     try {
         await updateDoc(doc(db, "orders", orderId), { status: newStatus });
@@ -137,7 +130,6 @@ async function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-// تعديل تفاصيل الطلب
 async function editOrderDetails(orderId) {
     try {
         const docRef = doc(db, "orders", orderId);
