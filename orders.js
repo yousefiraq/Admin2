@@ -1,18 +1,5 @@
 import { db, collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from "./firebase-config.js";
 
-// دالة لتنسيق التاريخ
-const formatDate = (timestamp) => {
-    if (!timestamp?.toDate) return '---';
-    const date = timestamp.toDate();
-    return date.toLocaleDateString('ar-EG', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
-
 // البحث عن الطلبات
 function searchOrders() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -29,7 +16,7 @@ document.getElementById('searchInput').addEventListener('input', () => {
     searchTimeout = setTimeout(searchOrders, 300);
 });
 
-// جلب الطلبات
+// جلب وتحديث الطلبات
 async function fetchOrders() {
     const tableBody = document.getElementById("ordersTable");
     tableBody.innerHTML = "";
@@ -52,7 +39,6 @@ async function fetchOrders() {
                     <td>${data.phone}</td>
                     <td>${data.province || data.address}</td>
                     <td>${data.pipes || 0}</td>
-                    <td>${formatDate(data.orderDate)}</td>
                     <td>
                         <select class="status-select" data-id="${docItem.id}">
                             <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
@@ -135,7 +121,7 @@ async function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-// تعديل الطلب
+// تعديل تفاصيل الطلب
 async function editOrderDetails(orderId) {
     try {
         const docRef = doc(db, "orders", orderId);
