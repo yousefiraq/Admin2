@@ -12,9 +12,9 @@ window.addEventListener('load', () => {
     }
 });
 
-// تهيئة الخريطة
+// تهيئة HERE Maps
 const platform = new H.service.Platform({
-    apikey: "7kAhoWptjUW7A_sSWh3K2qaZ6Lzi4q3xaDRYwFWnCbE"
+    apikey: "7kAhoWptjUW7A_sSWh3K2qaZ6Lzi4q3xaDRYwFWnCbE" // استبدل بمفتاحك الصحيح
 });
 
 // عرض الخريطة
@@ -57,16 +57,23 @@ window.showOrderMap = (lat, lng) => {
 
     document.body.appendChild(modal);
 
-    const defaultLayers = platform.createDefaultLayers();
-    const map = new H.Map(
-        document.getElementById('mapContainer'),
-        defaultLayers.vector.normal.map,
-        { center: { lat: lat, lng: lng }, zoom: 15 }
-    );
+    setTimeout(() => {
+        const defaultLayers = platform.createDefaultLayers();
+        const map = new H.Map(
+            document.getElementById('mapContainer'),
+            defaultLayers.vector.normal.map,
+            { 
+                center: { lat: lat, lng: lng }, 
+                zoom: 15,
+                pixelRatio: window.devicePixelRatio || 1 
+            }
+        );
 
-    const marker = new H.map.Marker({ lat: lat, lng: lng });
-    map.addObject(marker);
-    new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+        const marker = new H.map.Marker({ lat: lat, lng: lng });
+        map.addObject(marker);
+        new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+        H.ui.UI.createDefault(map, defaultLayers);
+    }, 100);
 };
 
 // فتح خرائط Google
