@@ -1,154 +1,105 @@
-import { db, collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from "./firebase-config.js";
+import { db, collection, addDoc, serverTimestamp } from "./firebase-config.js";
 
-// البحث عن الطلبات
-function searchOrders() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('#ordersTable tr');
-    rows.forEach(row => {
-        const name = row.cells[0].textContent.toLowerCase();
-        row.style.display = name.includes(searchTerm) ? '' : 'none';
-    });
-}
-
-let searchTimeout;
-document.getElementById('searchInput').addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(searchOrders, 300);
+// إدارة الوضع الداكن
+document.getElementById("darkModeToggle").addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
 });
 
-// جلب وتحديث الطلبات
-async function fetchOrders() {
-    const tableBody = document.getElementById("ordersTable");
-    tableBody.innerHTML = "";
-    let totalOrders = 0, pending = 0, delivered = 0, canceled = 0;
+window.addEventListener('load', () => {
+    if (localStorage.getItem("darkMode") === 'true') {
+        document.body.classList.add("dark-mode");
+    }
+});
 
-    try {
-        const querySnapshot = await getDocs(collection(db, "orders"));
-        querySnapshot.forEach((docItem) => {
-            const data = docItem.data();
-            totalOrders++;
-            switch(data.status) {
-                case 'قيد الانتظار': pending++; break;
-                case 'تم التوصيل': delivered++; break;
-                case 'ملغى': canceled++; break;
+// تهيئة HERE Maps
+const platform = new H.service.Platform({
+    apikey: "7kAhoWptjUW7A_sSWh3K2qaZ6Lzi4q3xaDRYwFWnCbE"
+});
+
+// وظائف الخرائط
+window.showOrderMap = (lat, lng) => {
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+        return alert("الإحداثيات غير صالحة!");
+    }
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        height: 70vh;
+        background: white;
+        z-index: 1000;
+        border-radius: 15px;
+        box-shadow: 0 0 25px rgba(0,0,0,0.2);
+        overflow: hidden;
+    `;
+
+    modal.innerHTML = `
+        <div id="mapContainer" style="height: 100%; width: 100%;"></div>
+        <button 
+            onclick="this.parentElement.remove()" 
+            class="close-map-btn"
+        >
+            ✕ إغلاق
+        </button>
+    `;
+
+    document.body.appendChild(modal);
+
+    setTimeout(() => {
+        const defaultLayers = platform.createDefaultLayers();
+        const map = new H.Map(
+            document.getElementById('mapContainer'),
+            defaultLayers.vector.normal.map,
+            { 
+                center: { lat: parseFloat(lat), lng: parseFloat(lng) }, 
+                zoom: 15,
+                pixelRatio: window.devicePixelRatio || 1 
             }
+        );
 
-            const row = `
-                <tr>
-                    <td>${data.name}</td>
-                    <td>${data.phone}</td>
-                    <td>${data.province || data.address}</td>
-                    <td>${data.pipes || 0}</td>
-                    <td>
-                        <select class="status-select" data-id="${docItem.id}">
-                            <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
-                            <option value="تم التوصيل" ${data.status === 'تم التوصيل' ? 'selected' : ''}>تم التوصيل</option>
-                            <option value="ملغى" ${data.status === 'ملغى' ? 'selected' : ''}>ملغى</option>
-                        </select>
-                    </td>
-                    <td>
-                        <div class="map-actions">
-                            <button class="map-btn" onclick="showOrderMap(${data.latitude},${data.longitude})">
-                                🌍 عرض الخريطة
-                            </button>
-                            <button class="google-btn" onclick="openGoogleMaps(${data.latitude},${data.longitude})">
-                                🗺️ فتح في Google Maps
-                            </button>
-                            <button class="waze-btn" onclick="openWaze(${data.latitude},${data.longitude})">
-                                🚗 فتح في Waze
-                            </button>
-                        </div>
-                    </td>
-                    <td>${new Date(data.orderDate?.toDate()).toLocaleDateString('ar')}</td>
-                    <td>
-                        <button class="action-btn edit-btn" data-id="${docItem.id}">✏️ تعديل</button>
-                        <button class="action-btn delete-btn" data-id="${docItem.id}">🗑️ حذف</button>
-                    </td>
-                </tr>
-            `;
-            tableBody.innerHTML += row;
-        });
+        new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+        H.ui.UI.createDefault(map, defaultLayers);
+        new H.map.Marker({ lat: parseFloat(lat), lng: parseFloat(lng) }).addTo(map);
+    }, 100);
+};
 
-        document.getElementById('totalOrders').textContent = totalOrders;
-        document.getElementById('pendingOrders').textContent = pending;
-        document.getElementById('deliveredOrders').textContent = delivered;
-        document.getElementById('canceledOrders').textContent = canceled;
+window.openGoogleMaps = (lat, lng) => {
+    if (!lat || !lng) return;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+};
 
-        document.querySelectorAll('.status-select').forEach(select => {
-            select.addEventListener('change', async () => {
-                await updateOrderStatus(select.dataset.id, select.value);
-            });
-        });
+window.openWaze = (lat, lng) => {
+    if (!lat || !lng) return;
+    window.open(`https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+};
 
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (confirm('هل أنت متأكد من الحذف؟')) await deleteOrder(btn.dataset.id);
-            });
-        });
-
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                await editOrderDetails(btn.dataset.id);
-            });
-        });
-
-        searchOrders();
-    } catch (error) {
-        console.error("حدث خطأ في جلب البيانات:", error);
-        alert("تعذر تحميل الطلبات!");
-    }
-}
-
-// حذف الطلب
-async function deleteOrder(orderId) {
+// إضافة طلب جديد
+window.addOrder = async () => {
     try {
-        await deleteDoc(doc(db, "orders", orderId));
-        await fetchOrders();
-        alert("تم الحذف بنجاح!");
-    } catch (error) {
-        console.error("خطأ في الحذف:", error);
-        alert("فشل في حذف الطلب!");
-    }
-}
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
 
-// تحديث حالة الطلب
-async function updateOrderStatus(orderId, newStatus) {
-    try {
-        await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-        await fetchOrders();
+        await addDoc(collection(db, "orders"), {
+            name: `عميل ${Math.floor(Math.random() * 1000)}`,
+            phone: `077${Math.floor(1000000 + Math.random() * 9000000)}`,
+            province: ["بغداد", "البصرة", "نينوى"][Math.floor(Math.random() * 3)],
+            pipes: Math.floor(1 + Math.random() * 5),
+            orderDate: serverTimestamp(),
+            status: "قيد الانتظار",
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        });
+        
+        alert("تمت الإضافة بنجاح!");
+        window.location.reload();
     } catch (error) {
-        console.error("خطأ في التحديث:", error);
-        alert("فشل في تحديث الحالة!");
+        console.error("خطأ:", error);
+        alert(error.message.includes("geolocation") ? "يجب تفعيل صلاحيات الموقع!" : "فشل في الإضافة!");
     }
-}
-
-// تعديل تفاصيل الطلب
-async function editOrderDetails(orderId) {
-    try {
-        const docRef = doc(db, "orders", orderId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            const newName = prompt("الاسم الحالي: " + data.name + "\n\nأدخل الاسم الجديد:", data.name);
-            const newPhone = prompt("الهاتف الحالي: " + data.phone + "\n\nأدخل الهاتف الجديد:", data.phone);
-            const newProvince = prompt("المحافظة الحالية: " + (data.province || data.address) + "\n\nأدخل المحافظة الجديدة:", data.province || data.address);
-            const newPipes = prompt("العدد الحالي: " + (data.pipes || 0) + "\n\nأدخل العدد الجديد:", data.pipes || 1);
-            
-            if (newName !== null && newPhone !== null && newProvince !== null && newPipes !== null) {
-                await updateDoc(docRef, {
-                    name: newName || data.name,
-                    phone: newPhone || data.phone,
-                    province: newProvince || data.province,
-                    pipes: parseInt(newPipes) || data.pipes
-                });
-                await fetchOrders();
-                alert("تم التحديث بنجاح!");
-            }
-        }
-    } catch (error) {
-        console.error("خطأ في التعديل:", error);
-        alert("فشل في التحديث: " + error.message);
-    }
-}
-
-window.onload = fetchOrders;
+};
