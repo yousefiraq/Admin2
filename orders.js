@@ -39,6 +39,7 @@ async function fetchOrders() {
                     <td>${data.phone}</td>
                     <td>${data.province || data.address}</td>
                     <td>${data.pipes || 0}</td>
+                    <td>${data.orderDate}</td>
                     <td>
                         <select class="status-select" data-id="${docItem.id}">
                             <option value="قيد الانتظار" ${data.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option>
