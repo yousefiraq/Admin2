@@ -1,7 +1,8 @@
 import { db, collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from "./firebase-config.js";
 
+// دالة لتنسيق التاريخ
 const formatDate = (timestamp) => {
-    if (!timestamp?.toDate) return 'بدون تاريخ';
+    if (!timestamp?.toDate) return '---';
     const date = timestamp.toDate();
     return date.toLocaleDateString('ar-EG', {
         year: 'numeric',
@@ -12,6 +13,7 @@ const formatDate = (timestamp) => {
     });
 };
 
+// البحث عن الطلبات
 function searchOrders() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('#ordersTable tr');
@@ -27,6 +29,7 @@ document.getElementById('searchInput').addEventListener('input', () => {
     searchTimeout = setTimeout(searchOrders, 300);
 });
 
+// جلب الطلبات
 async function fetchOrders() {
     const tableBody = document.getElementById("ordersTable");
     tableBody.innerHTML = "";
@@ -109,6 +112,7 @@ async function fetchOrders() {
     }
 }
 
+// حذف الطلب
 async function deleteOrder(orderId) {
     try {
         await deleteDoc(doc(db, "orders", orderId));
@@ -120,6 +124,7 @@ async function deleteOrder(orderId) {
     }
 }
 
+// تحديث حالة الطلب
 async function updateOrderStatus(orderId, newStatus) {
     try {
         await updateDoc(doc(db, "orders", orderId), { status: newStatus });
@@ -130,6 +135,7 @@ async function updateOrderStatus(orderId, newStatus) {
     }
 }
 
+// تعديل الطلب
 async function editOrderDetails(orderId) {
     try {
         const docRef = doc(db, "orders", orderId);
