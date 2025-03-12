@@ -47,11 +47,14 @@ async function fetchOrders() {
                     <td>
                         <div class="map-actions">
                             ${data.latitude && data.longitude ? `
+                            <button class="map-btn" onclick="showOrderMap(${data.latitude},${data.longitude})">
+                                🌍 عرض الخريطة
+                            </button>
                             <button class="google-btn" onclick="openGoogleMaps(${data.latitude},${data.longitude})">
-                                🗺️ Google Maps
+                                🗺️ فتح في Google Maps
                             </button>
                             <button class="waze-btn" onclick="openWaze(${data.latitude},${data.longitude})">
-                                🚗 Waze
+                                🚗 فتح في Waze
                             </button>
                             ` : '❌ لا يوجد موقع'}
                         </div>
@@ -140,7 +143,7 @@ async function editOrderDetails(orderId) {
             }
         }
     } catch (error) {
-        console.error("خطأ في التعديل:", error);
+        console.error("خطأ في التع��يل:", error);
         alert("فشل في التحديث: " + error.message);
     }
 }
